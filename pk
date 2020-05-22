@@ -32,9 +32,11 @@ pk_readlink() {
 
 pk_completion() {
     pkc_location="$(dirname -- "$(pk_readlink "$(command -v -- "$0")")")"
-    if grep -q "^\..*pk_completion.bash" "$HOME/.bash_completion"; then
-        :
+    if [ -e "$HOME/.bash_completion" ] &&  grep -q "^\. $pkc_location/pk_completion.bash" "$HOME/.bash_completion"; then
+        echo "completion for pk already setup"
     else
+        echo ". $pkc_location/pk_completion.bash"  >> "$HOME/.bash_completion"
+        echo "completion for pk setup"
     fi
 }
 
@@ -42,9 +44,9 @@ pk_detect_type() {
     if [ -e "/etc/os-release" ]; then
         if grep -q "debian" "/etc/os-release"; then
             echo "apt"
-        elif grep -q "fedora" "/etc/os-release"
+        elif grep -q "fedora" "/etc/os-release"; then
             echo "dnf"
-        elif grep -q "alpine" "/etc/os-release"
+        elif grep -q "alpine" "/etc/os-release"; then
             echo "apk"
         fi
     else
@@ -59,12 +61,14 @@ pk_usage() {
 usage pk <action> [parameters]
 
 actions:
-   i, install <package>...   install new package(s)
-   u, uninstall <package>..  uninstall package(s)
-   s, search <needle>...     query the package database
-   u, update                 update the package database
-   g, upgrade                upgrade the pakcages
-   o, owner <path>           search the package owning a given file
+   i, install <package>...  install new package(s)
+   r, remove <package>..    uninstall package(s)
+   s, search <needle>...    query the package database
+   u, update                update the package database
+   g, upgrade               upgrade the pakcages
+   o, owner <path>          search the package owning a given file
+   completion               setup bash completion for pk
+   backend                  print the backend detected by pk
 EOF
 }
 
@@ -76,8 +80,8 @@ pk_apk_install() {
     apk install "$@"
 }
 
-pk_apk_uninstall() {
-    apk uninstall "$@"
+pk_apk_remove() {
+    apk remove "$@"
 }
 
 pk_apk_search() {
@@ -104,7 +108,7 @@ pk_apt_install() {
     apt install "$@"
 }
 
-pk_apt_uninstall() {
+pk_apt_remove() {
     apt remove "$@"
 }
 
@@ -133,7 +137,7 @@ pk_dnf_install() {
     dnf install "$@"
 }
 
-pk_dnf_uninstall() {
+pk_dnf_remove() {
     dnf remove "$@"
 }
 
@@ -163,12 +167,12 @@ fi
 pk_cmd="$1"
 shift
 
-case "$1" in
+case "$pk_cmd" in
     i|install)
         pk_${pk_type}_install "$@"
         ;;
-    u|uninstall)
-        pk_${pk_type}_uninstall "$@"
+    r|remove)
+        pk_${pk_type}_remove "$@"
         ;;
     s|search)
         pk_${pk_type}_search "$@"
@@ -184,5 +188,8 @@ case "$1" in
         ;;
     completion)
         pk_completion "$@"  
+        ;;
+    backend)
+        echo $pk_type
         ;;
 esac

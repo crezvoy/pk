@@ -11,12 +11,14 @@ Clone this repository somewhere convienent and either put the resulting director
     usage pk <action> [parameters]
     
     actions:
-        i, install <package>...   install new package(s)
-        u, uninstall <package>..  uninstall package(s)
-        s, search <needle>...     query the package database
-        u, update                 update the package database
-        g, upgrade                upgrade the pakcages
-        o, owner <path>           search the package owning a given file
+       i, install <package>...  install new package(s)
+       r, remove <package>..    uninstall package(s)
+       s, search <needle>...    query the package database
+       u, update                update the package database
+       g, upgrade               upgrade the pakcages
+       o, owner <path>          search the package owning a given file
+       completion               setup bash completion for pk
+       backend                  print the backend detected by pk
 
 ## License
 
