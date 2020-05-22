@@ -1,0 +1,188 @@
+#! /bin/sh
+
+pk_die() {
+    echo "$@" >&2
+    exit 1
+}
+
+pk_abspath() {
+    pkrp_saveloc="$(pwd)"
+    if [ -d "$1" ]; then
+        cd -P "$1" || pk_die "cd into '$1' failed"
+        pwd -P
+    else
+        cd -P "$(dirname -- "$1")" || pk_die "cd into '$(dirname -- "$1")' failed"
+        echo "$(pwd -P)/$(basename -- "$1")"
+    fi
+    cd -P "$hrp_saveloc" || pk_die "cd into '$hrp_saveloc' failed"
+}
+
+pk_readlink() {
+    if [ -L "$1" ]; then
+       pkrl_target="$(find "$1" -prune -printf '%l')"
+       if echo "$hrl_target" | grep -q "^/"; then
+           pk_abspath "$hrl_target"
+       else
+           pk_abspath "$(dirname -- "$1")/$pkrl_target"
+       fi
+    else
+       pk_abspath "$1"
+    fi
+}
+
+pk_completion() {
+    pkc_location="$(dirname -- "$(pk_readlink "$(command -v -- "$0")")")"
+    if grep -q "^\..*pk_completion.bash" "$HOME/.bash_completion"; then
+        :
+    else
+    fi
+}
+
+pk_detect_type() {
+    if [ -e "/etc/os-release" ]; then
+        if grep -q "debian" "/etc/os-release"; then
+            echo "apt"
+        elif grep -q "fedora" "/etc/os-release"
+            echo "dnf"
+        elif grep -q "alpine" "/etc/os-release"
+            echo "apk"
+        fi
+    else
+        if [ -n "${PREFIX-}" ] && echo "$PREFIX" | grep -q "com\.termux"; then
+            echo "apt"
+        fi
+    fi
+}
+
+pk_usage() {
+    cat << EOF
+usage pk <action> [parameters]
+
+actions:
+   i, install <package>...   install new package(s)
+   u, uninstall <package>..  uninstall package(s)
+   s, search <needle>...     query the package database
+   u, update                 update the package database
+   g, upgrade                upgrade the pakcages
+   o, owner <path>           search the package owning a given file
+EOF
+}
+
+#######
+# apk #
+#######
+
+pk_apk_install() {
+    apk install "$@"
+}
+
+pk_apk_uninstall() {
+    apk uninstall "$@"
+}
+
+pk_apk_search() {
+    apk search "$@"
+}
+
+pk_apk_update() {
+    apk update "$@"
+}
+
+pk_apk_upgrade() {
+    apk upgrade "$@"
+}
+
+pk_apk_owner() {
+    apk info --who-owns "$@"
+}
+
+#######
+# apt #
+#######
+
+pk_apt_install() {
+    apt install "$@"
+}
+
+pk_apt_uninstall() {
+    apt remove "$@"
+}
+
+pk_apt_search() {
+    apt search "$@"
+}
+
+pk_apt_update() {
+    apt update "$@"
+}
+
+pk_apt_upgrade() {
+    apt upgrade "$@"
+}
+
+pk_apt_owner() {
+    dpkg -S "$@" 
+}
+
+
+#######
+# dnf #
+#######
+
+pk_dnf_install() {
+    dnf install "$@"
+}
+
+pk_dnf_uninstall() {
+    dnf remove "$@"
+}
+
+pk_dnf_search () {
+    dnf search "$@"
+}
+
+pk_dnf_update() {
+    dnf check-update "$@"
+}
+
+pk_dnf_upgrade() {
+    dnf upgrade "$@"
+}
+
+pk_dnf_owner() {
+    rpm -qf "$@"
+}
+
+
+pk_type="$(pk_detect_type)"
+
+if [ -z "$pk_type" ]; then
+    pk_die "your package management system is not currently supported. you can contribute at https://github.com/crezvoy/pk"
+fi
+
+pk_cmd="$1"
+shift
+
+case "$1" in
+    i|install)
+        pk_${pk_type}_install "$@"
+        ;;
+    u|uninstall)
+        pk_${pk_type}_uninstall "$@"
+        ;;
+    s|search)
+        pk_${pk_type}_search "$@"
+        ;;
+    u|update)
+        pk_${pk_type}_update "$@"
+        ;;
+    g|upgrade)
+        pk_${pk_type}_upgrade "$@"
+        ;;
+    o|owner)
+        pk_${pk_type}_owner "$@"
+        ;;
+    completion)
+        pk_completion "$@"  
+        ;;
+esac
