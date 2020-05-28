@@ -1,0 +1,193 @@
+#!/bin/sh -uCx
+
+NEXT_SHELL="${1:-$SHELL}"
+
+TE_DIR="$(pwd)/test-env.$$"
+
+mkdir -p "$TE_DIR"
+
+if [ -z "${NO_CLEANUP-}" ]; then
+    trap "rm -rf '$TE_DIR'" EXIT HUP INT QUIT ABRT TERM
+fi
+
+(
+mkdir "$TE_DIR/git"
+
+mkdir -p "$TE_DIR/git/hsh_simple_package"
+echo "hsh_simple_file content" \
+    > "$TE_DIR/git/hsh_simple_package/hsh_simple_file"
+mkdir -p "$TE_DIR/git/hsh_simple_package/hsh_simple_subdir"
+echo "hsh_simple_subfile content" \
+    > "$TE_DIR/git/hsh_simple_package/hsh_simple_subdir/hsh_simple_subfile"
+cat <<EOF >"$TE_DIR/git/hsh_simple_package/h.sh"
+hsh_link "hsh_simple_file"
+hsh_link "hsh_simple_subdir/hsh_simple_subfile" "hsh_simple_subfile"
+EOF
+git -C "$TE_DIR/git/hsh_simple_package" init 
+git -C "$TE_DIR/git/hsh_simple_package" add \
+    hsh_simple_file \
+    hsh_simple_subdir/hsh_simple_subfile \
+    h.sh
+git -C "$TE_DIR/git/hsh_simple_package" commit -m "initial commit"
+git --git-dir "$TE_DIR/git/hsh_simple_package/.git" config core.bare true
+
+mkdir -p "$TE_DIR/git/simple_package"
+echo "simple_file content" \
+    > "$TE_DIR/git/simple_package/simple_file"
+mkdir -p "$TE_DIR/git/simple_package/simple_subdir"
+echo "simple_subfile content" \
+    > "$TE_DIR/git/simple_package/simple_subdir/simple_subfile"
+cat <<EOF >"$TE_DIR/git/simple_package/h.sh"
+hsh_link "simple_file"
+hsh_link "simple_subdir/simple_subfile" "simple_subfile"
+EOF
+git -C "$TE_DIR/git/simple_package" init 
+git -C "$TE_DIR/git/simple_package" add \
+    simple_file \
+    simple_subdir/simple_subfile \
+    h.sh
+git -C "$TE_DIR/git/simple_package" commit -m "initial commit"
+git --git-dir "$TE_DIR/git/simple_package/.git" config core.bare true
+
+mkdir -p "$TE_DIR/git/simple_package2"
+echo "simple_file2 content" \
+    > "$TE_DIR/git/simple_package2/simple_file2"
+mkdir -p "$TE_DIR/git/simple_package2/simple_subdir2"
+echo "simple_subfile2 content" \
+    > "$TE_DIR/git/simple_package2/simple_subdir2/simple_subfile2"
+cat <<EOF >"$TE_DIR/git/simple_package2/h.sh"
+hsh_link "simple_file2"
+hsh_link "simple_subdir2/simple_subfile2"
+EOF
+git -C "$TE_DIR/git/simple_package2" init 
+git -C "$TE_DIR/git/simple_package2" add \
+    simple_file2 \
+    simple_subdir2/simple_subfile2 \
+    h.sh
+git -C "$TE_DIR/git/simple_package2" commit -m "initial commit"
+git --git-dir "$TE_DIR/git/simple_package2/.git" config core.bare true
+
+mkdir -p "$TE_DIR/git/simple_package3"
+echo "simple_file3 content" \
+    > "$TE_DIR/git/simple_package3/simple_file3"
+mkdir -p "$TE_DIR/git/simple_package3/simple_subdir3"
+echo "simple_subfile3 content" \
+    > "$TE_DIR/git/simple_package3/simple_subdir3/simple_subfile3"
+cat <<EOF >"$TE_DIR/git/simple_package3/h.sh"
+hsh_link "simple_file3"
+hsh_link "simple_subdir3/simple_subfile3"
+EOF
+git -C "$TE_DIR/git/simple_package3" init 
+git -C "$TE_DIR/git/simple_package3" add \
+    simple_file3 \
+    simple_subdir3/simple_subfile3 \
+    h.sh
+git -C "$TE_DIR/git/simple_package3" commit -m "initial commit"
+git --git-dir "$TE_DIR/git/simple_package3/.git" config core.bare true
+
+mkdir -p "$TE_DIR/git/package_dep"
+echo "file_dep content" \
+    > "$TE_DIR/git/package_dep/file_dep"
+mkdir -p "$TE_DIR/git/package_dep/subdir_dep"
+echo "subfile_dep content" \
+    > "$TE_DIR/git/package_dep/subdir_dep/subfile_dep"
+cat <<EOF >"$TE_DIR/git/package_dep/h.sh"
+hsh_require "$TE_DIR/git/simple_package3/.git"
+hsh_link "file_dep"
+hsh_link "subdir_dep/subfile_dep"
+EOF
+git -C "$TE_DIR/git/package_dep" init 
+git -C "$TE_DIR/git/package_dep" add \
+    file_dep \
+    subdir_dep/subfile_dep \
+    h.sh
+git -C "$TE_DIR/git/package_dep" commit -m "initial commit"
+git --git-dir "$TE_DIR/git/package_dep/.git" config core.bare true
+
+mkdir -p "$TE_DIR/git/package_dep_deeper"
+echo "file_deeper content" \
+    > "$TE_DIR/git/package_dep_deeper/file_deeper"
+mkdir -p "$TE_DIR/git/package_dep_deeper/subdir_deeper"
+echo "subfile_deeper content" \
+    > "$TE_DIR/git/package_dep_deeper/subdir_deeper/subfile_deeper"
+cat <<EOF >"$TE_DIR/git/package_dep_deeper/h.sh"
+hsh_require "$TE_DIR/git/package_dep/.git"
+hsh_link "file_deeper"
+hsh_link "subdir_deeper/subfile_deeper"
+EOF
+git -C "$TE_DIR/git/package_dep_deeper" init 
+git -C "$TE_DIR/git/package_dep_deeper" add \
+    file_deeper \
+    subdir_deeper/subfile_deeper \
+    h.sh
+git -C "$TE_DIR/git/package_dep_deeper" commit -m "initial commit"
+git --git-dir "$TE_DIR/git/package_dep_deeper/.git" config core.bare true
+
+mkdir -p "$TE_DIR/git/package_error"
+echo "simple_file_error content" \
+    > "$TE_DIR/git/package_error/file_error"
+mkdir -p "$TE_DIR/git/package_error/subdir_error"
+echo "subfile_error content" \
+    > "$TE_DIR/git/package_error/subdir_error/subfile_error"
+cat <<EOF >"$TE_DIR/git/package_error/h.sh"
+hsh_link "file_error"
+hsh_link "subdir_error/subfile_error"
+hsh_link "file_not_exists"
+EOF
+git -C "$TE_DIR/git/package_error" init 
+git -C "$TE_DIR/git/package_error" add \
+    file_error \
+    subdir_error/subfile_error \
+    h.sh
+git -C "$TE_DIR/git/package_error" commit -m "initial commit"
+git --git-dir "$TE_DIR/git/package_error/.git" config core.bare true
+
+mkdir -p "$TE_DIR/git/package_dep_error"
+echo "file_dep_error content" \
+    > "$TE_DIR/git/package_dep_error/file_dep_error"
+mkdir -p "$TE_DIR/git/package_dep_error/subdir_dep_error"
+echo "subfile_dep_error content" \
+    > "$TE_DIR/git/package_dep_error/subdir_dep_error/subfile_dep_error"
+cat <<EOF >"$TE_DIR/git/package_dep_error/h.sh"
+hsh_require "$TE_DIR/git/simple_package/.git"
+hsh_link "file_dep_error"
+hsh_link "subdir_dep_error/subfile_dep_error"
+hsh_require "$TE_DIR/git/package_error/.git"
+EOF
+git -C "$TE_DIR/git/package_dep_error" init 
+git -C "$TE_DIR/git/package_dep_error" add \
+    file_dep_error \
+    subdir_dep_error/subfile_dep_error \
+    h.sh
+git -C "$TE_DIR/git/package_dep_error" commit -m "initial commit"
+) >/dev/null 2>/dev/null
+git --git-dir "$TE_DIR/git/package_dep_error/.git" config core.bare true
+
+mkdir -p "$TE_DIR"
+
+SHELL="$NEXT_SHELL"
+export SHELL
+
+test_fail() {
+    local msg
+    msg="$1"
+    echo "$1" >&2
+    exit 1
+}
+
+cd "$TE_DIR"
+HSH_DIR="$(cd -P -- "$(dirname "$(command -v -- "$0")")" && pwd -P)/.."
+
+sed "s,https://github.com/crezvoy/hsh.git,$HSH_DIR/.git," "$HSH_DIR/install-script.sh" > "install-script.sh"
+chmod u+x "install-script.sh"
+mkdir bin
+PATH="$(pwd)/bin:$PATH"
+export PATH
+
+./install-script.sh
+
+if [ $# -eq 2 ]; then
+   . "$HSH_DIR/$2"
+else
+    $SHELL
+fi

@@ -1,0 +1,102 @@
+#! /bin/sh -ueC
+
+usage() {
+    cat << 'EOF'
+usage: $0 [--work-tree <path>] [--hsh-dir <path>] [--bin <path>]
+
+    -C <path>  act as if the command was called from <path>
+    -b, --bin  path to where hsh script is checked out, default: './bin'
+EOF
+}
+
+die() {
+	echo "$@" >&2
+	exit 1
+}
+
+cleanup() {
+    if [ -e "$1" ]
+    then
+
+        if [ -e "$(pwd)/.hsh" ]
+        then
+            rm -rf "$(pwd)/.hsh"
+        fi
+        rm -rf "$1"
+    fi
+}
+
+fixup_worktree() {
+    mv "$1" "$1.bck"
+    sed "/[ \t]*\[[ \t]*core[ \t]*\]/,/[ \t]*\[/ { s,[ \t]*worktree[ \t]*=.*,worktree=$2,g}" "$1.bck" > "$1"
+    rm "$1.bck"
+}
+
+while [ $# -ne 0 ]
+do
+	case "$1" in
+		-h|--help)
+			usage
+            exit 0
+			;;
+        -C)
+            shift
+            [ $# -eq 0 ] && die "missing value for parameter '-C'"
+            dir="$1"
+            ;;
+		-b|--bin)
+			shift
+            [$tmp_dir/root $# -eq 0 ] && die "missing value for parameter --hsh-dir"
+			bin_dir="$1"
+			;;
+		*)
+			die "unknown option '$1'"
+			;;
+	esac
+	shift
+done
+
+if [ -n "${dir-}" ]
+then
+    cd "$dir" || die "Failed to switch to '$dir'"
+fi
+
+hsh_dir="$(pwd)/.hsh"
+bin_dir="${bin_dir:-$(pwd)/bin}"
+tmp_dir="$(pwd)/.hsh_install_$$"
+
+mkdir "$tmp_dir"
+trap "cleanup \"$tmp_dir\"" EXIT HUP INT QUIT ABRT TERM
+
+BUNDLE_START=$(awk '/^__HSH_BUNDLE_CONTENT__/ { print NR + 1; exit 0; }' "$0")
+tail -n+$BUNDLE_START "$0" | tar xz -C "$tmp_dir" \
+    || die "fail to extract bundle"
+
+if [ ! -e "$bin_dir" ]
+then
+    mkdir "$bin_dir"
+fi
+cp "$tmp_dir/hsh" "$bin_dir/hsh"
+
+if [ ! -e "$hsh_dir" ]
+then
+    mkdir "$hsh_dir"
+fi
+
+ls -1 "$tmp_dir/repos" | while IFS= read -r repo
+do
+    fixup_worktree "$tmp_dir/repos/$repo/config" "$(pwd)"
+done
+
+cp -rfP "$tmp_dir/repos" "$hsh_dir"
+
+ls -1 "$tmp_dir/root" | while IFS= read -r entry
+do
+    cp -rfP "$tmp_dir/root/$entry" "$(pwd)"
+done
+
+rm -rf "$tmp_dir"
+
+exit $?
+
+__HSH_BUNDLE_CONTENT__
