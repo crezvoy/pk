@@ -5,7 +5,7 @@ Its most salient features are:
 
  - hsh is a simple shell script, most of the heavy lifting is carried out by git;
  - hsh can create modular configurations by splitting dotfiles into separate
-   repos (/e.g./ work/personal, headless/gui, gihub/private/offline...);
+   repos (*e.g.* work/personal, headless/gui, gihub/private/offline...);
  - hsh simplifies setting up a new machine by creating a bundle of your current
    config, that can then be installed elsewhere;
  - hsh is not a link farm, files are checked out directly from git directories
@@ -94,7 +94,7 @@ customize the path to where ths hsh script is extracted and defaults to `./bin`.
 # Roadmap
 
  - [ ] dependencies
- - [ ] hooks (install update /etc./)
+ - [ ] hooks (install update *etc.*)
  - [ ] portability tests
  - [ ] bash completion
  - [ ] CI
