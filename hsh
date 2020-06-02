@@ -134,6 +134,8 @@ hsh_clone() {
     then
         hsh_die "missing parameter for hsh clone command"
     fi
+    hcl_url="$(hsh_complete_url "$hcl_url")"
+    echo "$hcl_url"
 	# remove .git or /.git
     hcl_name="${hcl_url%.git}"
     hcl_name="${hcl_name%/}"
@@ -150,6 +152,34 @@ hsh_clone() {
     hsh_git "$hcl_name" checkout HEAD 
     rmdir "$HSH_DIR/CLONE"
 }
+
+hsh_complete_url() {
+    hcu_url="$1"
+    shift
+    case $hcu_url in
+        github.com/*)
+            hcu_config_user="$(hsh_git hsh config github.username || true)"
+            ;;
+        gitlab.com/*)
+            hcu_config_user="$(hsh_git hsh config gitlab.username || true)"
+            ;;
+        *)
+            echo "$hcu_url"
+            return 0
+            ;;
+    esac
+    hcu_repo="${hcu_url##*/}"
+    hcu_url="${hcu_url%/*}"
+    hcu_user="${hcu_url##*/}"
+    hcu_url="${hcu_url%/*}"
+    if [ "$hcu_user" = "$hcu_config_user" ]
+    then
+        echo "git@$hcu_url:$hcu_user/$hcu_repo"
+    else
+        echo "https://$hcu_url/$hcu_user/$hcu_repo"
+    fi
+}
+
 
 hsh_config_usage() {
 cat << EOF
