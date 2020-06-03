@@ -41,7 +41,7 @@ hsh will act on the nearest .hsh directory up the directory tree but all
 commands accept a `-C` argument to change the current directory before any
 action. `hsh` do however add new commands or override git ones.
 
-# Init
+## Init
 
 The `init` command creates a new repository `<name>` in `hsh`:
 
