@@ -232,6 +232,83 @@ hsh_die() {
     exit 1
 }
 
+hsh_edit_usage() {
+    cat <<EOF
+usage: hsh edit <repository> <file>
+
+edit repository files that are not in the worktree
+
+files:
+    readme
+    license
+    gitignore
+    gitattributes
+EOF
+}
+
+hsh_edit_cleanup() {
+    if [ -e "$HSH_DIR/EDIT" ]
+    then
+        rm "$HSH_DIR/EDIT"
+    fi
+}
+
+
+hsh_edit() {
+    while [ $# -ne 0 ]
+    do
+        case "$1" in
+            -h|--help)
+                hsh_init_usage
+                return 0
+                ;;
+            -*)
+                hsh_die "unknown option '$1' for command init"     
+                ;;
+            *)
+                he_repo="$1"
+                ;;
+        esac
+        shift
+    done
+    if [ -z "${he_repo-}" ]
+    then
+        hsh_edit_usage
+        exit 1
+    fi
+    if [ -z "$1" ]
+    then
+        hsh_edit_usage
+        exit 1
+    fi
+    he_target="$1"
+    shift
+    case "$he_target" in
+        readme)
+            he_target="README.md"
+            ;;
+        license)
+            he_target="LICENSE"
+            ;;
+        gitignore)
+            he_target=".gitignore"
+            ;;
+        gitattributes)
+            he_target=".gitattributes"
+            ;;
+    esac
+    trap "hsh_edit_cleanup" HUP INT QUIT ABRT TERM
+    if [ -z "$(hsh_git "he_repo" ls-files | grep -q "^$he_target\$")" ]; then
+        touch "$HSH_DIR/EDIT"
+    else
+        hsh_git "$he_repo" show "HEAD:$he_target" > "$HSH_DIR/EDIT"
+    fi
+    "${EDITOR:-vim}" "$HSH_DIR/EDIT"
+    he_sha1="$(hsh_git "$he_repo" hash-object -t blob --stdin < "$HSH_DIR/EDIT")"
+    hsh_git "$he_repo" update-index --cacheinfo "100644" "$he_sha1" "$he_target"
+    rm "$HSH_DIR/EDIT"
+}
+
 hsh_find_root() {
     hfr_start="${1}"
     hfr_root="$hfr_start"
@@ -402,6 +479,9 @@ case "$h_action" in
         ;;
     init)
         hsh_init "$@"
+        ;;
+    edit)
+        hsh_edit "$@"
         ;;
     *)
         if [ -z "${h_repo-}" ]

@@ -43,14 +43,12 @@ action. `hsh` do however add new commands or override git ones.
 
 ## Init
 
-The `init` command creates a new repository `<name>` in `hsh`:
 
     hsh [-C <dir>] init <name>
 
+The `init` command creates a new repository `<name>` in `hsh`.
 
 ## Clone
-
-The syntax of the clone command is as follows:
 
     hsh [-C <dir>] clone <url|url-ish>
 
@@ -59,8 +57,6 @@ in the `.hsh` directory and checkng out the default branch. The command does not
 accept any parameters other than `-C`.
 
 ## Bundle
-
-The bundle goes as follows:
 
     hsh [-C <dir>] bundle [-f | --force] [[-n | --name] <dir>]
 
@@ -76,6 +72,21 @@ options:
 As for other command, `-C` changes the current directory. one of the repo that
 are extracted by the bundle is `hsh` itself, the `--bin` option allow you to
 customize the path to where ths hsh script is extracted and defaults to `./bin`.
+
+## Edit
+
+    hsh edit <repo> <file>
+
+The edit command allows to modify files that are not checked out to the
+worktree as they would clutter the worktree and conflict between the different
+repositories:
+
+- `README.md`
+- `LICENSE`
+- `.gitignore`
+- `.gitattributes`
+
+Modified files are staged directly after edition.
 
 # Synopsis
 
