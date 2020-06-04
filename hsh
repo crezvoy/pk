@@ -1,4 +1,4 @@
-#! /bin/sh -ueCx
+#! /bin/sh -ueC
 
 hsh_bundle_usage() {
     cat <<EOF
@@ -39,12 +39,12 @@ hsh_bundle() {
                 shift
                 if [ $# -eq 0 ]
                 then
-                    hsh_err_die "missing argument for parameter '--name(-n)'"
+                    hsh_die "missing argument for parameter '--name(-n)'"
                 fi
                 hb_name="${1}"
                 ;;
             *)
-                hsh_err_die "unknown option '$1' for command bundle"
+                hsh_die "unknown option '$1' for command bundle"
                 ;;
         esac
         shift
@@ -180,6 +180,70 @@ hsh_complete_url() {
     fi
 }
 
+hsh_completion_usage() {
+    cat <<EOF
+usage: hsh completion 
+
+output completion rules for hsh command.
+EOF
+}
+
+hsh_completion_cleanup() {
+    if [ -e "$2" ]
+    then
+        mv "$2" "$1"
+    fi
+}
+
+hsh_completion() {
+    hcom_output=""
+    while [ $# -ne 0 ]
+    do
+        case "$1" in
+            -h|--help)
+                hsh_completion_usage
+                return 0
+                ;;
+            -o|--output)
+                shift
+                if [ $# -eq 0 ]
+                then
+                    hsh_die "missing argument for parameter '--output(-o)'"
+                fi
+                hcom_output="$1"
+                ;;
+            -*)
+                echo "unknown option '$1'"
+                return 1
+                ;;
+            *)
+                hco_repo="$1"
+                shift
+                break
+                ;;
+        esac
+        shift
+    done
+    if [ "$hcom_output" != "" ]
+    then
+        trap "hsh_completion_cleanup '$hcom_output' '$hcom_output.$$'" HUP INT QUIT ABRT TERM
+        if [ -e "$hcom_output"  ]
+        then
+            mv "$hcom_output" "$hcom_output.$$"
+            sed "/#---8<--- hsh completion rules ---8<---/,/#--->8--- hsh completion rules --->8---/ d"  "$hcom_output.$$" > "$hcom_output"
+        fi
+        exec 9>>"$hcom_output"
+    else
+        exec 9>&1
+    fi
+    echo "#---8<--- hsh completion rules ---8<---" >&9
+    hsh_git hsh show HEAD:_hsh >&9
+    echo "#--->8--- hsh completion rules --->8---" >&9
+    if [ -e "$hcom_output.$$" ]
+    then
+        rm "$hcom_output.$$"
+    fi
+}
 
 hsh_config_usage() {
 cat << EOF
@@ -213,10 +277,10 @@ hsh_config() {
 }
 
 hsh_config_repo() {
-    git --git-dir "$HSH_DIR/repos/$1" config core.worktree "$HSH_ROOT"
-    git --git-dir "$HSH_DIR/repos/$1" config core.sparseCheckout true
-    git --git-dir "$HSH_DIR/repos/$1" config pull.rebase true
-    git --git-dir "$HSH_DIR/repos/$1" config status.showUntrackedFiles no 
+    hsh_git "$1" config core.worktree "$HSH_ROOT"
+    hsh_git "$1" config core.sparseCheckout true
+    hsh_git "$1" config pull.rebase true
+    hsh_git "$1" config status.showUntrackedFiles no 
     cat <<- 'EOF' > "$HSH_DIR/repos/$1/info/sparse-checkout" 
 		/*
 		!README.md
@@ -470,6 +534,9 @@ case "$h_action" in
         ;;
     clone)
         hsh_clone "$@"
+        ;;
+    completion)
+        hsh_completion "$@"
         ;;
     config)
         hsh_config "$@"

@@ -1,0 +1,65 @@
+#! /bin/env bash
+
+hsh clone git/simple_package/.git
+hsh clone git/simple_package2/.git
+hsh clone git/simple_package3/.git
+
+cat << EOF >completion_script
+#---8<--- hsh completion rules ---8<---
+test_fail "old completion not remove"
+#--->8--- hsh completion rules --->8---
+EOF
+
+hsh completion -o "completion_script"
+
+if [ -z "$PREFIX" ]
+then
+    BASH_COMPLETION="/usr/share/bash-completion/bash_completion"
+else
+    BASH_COMPLETION="$PREFIX/share/bash-completion/bash_completion"
+fi
+
+. "$BASH_COMPLETION"
+
+. ./completion_script
+
+rm completion_script
+
+get_completion() {
+    COMP_LINE="$*"
+    COMP_POINT="${#COMP_LINE}"
+    eval set -- "$@"
+    COMP_WORDS=( "$@" )
+    COMP_CWORD=${#COMP_WORDS[@]}
+    if [ "${COMP_LINE[@]: -1}" = ' ' ]
+    then
+        COMP_WORDS+=( '' )
+    else
+        COMP_CWORD=$(( COMP_CWORD - 1 ))
+    fi
+    _hsh 
+    echo "${COMPREPLY[*]}"
+
+}
+
+test_completion() {
+    local input="$1"
+    shift
+
+    local comp="$(get_completion "$input")"
+
+    [ "$comp" = "$1" ] \
+        || test_fail "failed completion.\ninput: $input;\nexpected: $1;\ngot: $comp"
+}
+
+test_completion "hsh cl" "clean clone"
+
+test_completion "hsh add simple_pa" "simple_package simple_package2 simple_package3"
+
+test_completion "hsh add simple_package2 " "simple_file3 bin .hsh install-script.sh git simple_subdir simple_file simple_subdir3"
+
+test_completion "hsh add simple_package2 sim" "simple_file3 simple_subdir simple_file simple_subdir3"
+
+test_completion "hsh edit simple_package2 " "readme license gitignore gitattributes"
+
+test_completion "hsh edit simple_package2 g" "gitignore gitattributes"

@@ -22,8 +22,24 @@ $(test_cases): %: t/%.sh hsh t/testenv
 		false; \
 	fi
 
+.PHONY: bash-completion
+bash-completion: t/bash-completion hsh t/testenv
+	@printf "%-28s" "$@"
+	@bash t/testenv bash t/bash-completion >$@.err 2>&1; \
+	if [ $$? = 0 ]; then \
+		printf ' \033[32m✔\033[0m\n'; \
+	    rm "$@.err"; \
+		true; \
+ 	else \
+		printf ' \033[31m✘\033[0m\n'; \
+		cat "$@.err"; \
+	    rm "$@.err"; \
+		false; \
+	fi
+	
+
 .PHONY: check
-check: $(test_cases)
+check: $(test_cases) bash-completion
 
 .PHONY: clean
 clean:

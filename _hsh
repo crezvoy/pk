@@ -1,0 +1,179 @@
+#! /bin/env bash -i
+
+if ! declare -F _git > /dev/null && declare -F _completion_loader > /dev/null
+then
+    _completion_loader git
+fi
+
+_hsh_find_root() {
+    local root_dir="$(pwd)"
+    while [ $i -lt $COMP_CWORD ]
+    do 
+        case "${COMP_WORDS[$i]}" in
+            -C)
+                i=$((i + 1))
+                root_dir="${COMP_WORDS[$i]}"
+                break
+                ;;
+            -*)
+                ;;
+            *)
+                break
+                ;;
+        esac
+        i=$((i + 1))
+    done
+    while [ "$root_dir" != '/' ] && [ "$root_dir" != '.' ] 
+    do
+        if [ -e "$root_dir/.hsh" ]
+        then
+            echo "$root_dir"
+            break
+        fi
+        root_dir="$(dirname "$root_dir")"
+    done
+}
+
+_hsh_repo_dir() {
+    local repo_dir="$(_hsh_find_root)/.hsh/repos"
+}
+
+_hsh_is_global_command () {
+    while [ $i -lt $COMP_CWORD ]
+    do 
+        case "${COMP_WORDS[$i]}" in
+            -a|--all)
+                return 0
+                ;;
+            -*)
+                : go on
+                ;;
+            *)
+                break
+                ;;
+        esac
+        i=$((i + 1))
+    done
+    return 1
+}
+
+_hsh_default() {
+    local cmd="$1"
+    shift
+    local cmd_idx="$1"
+    shift
+    local cword="$COMP_CWORD"
+    # at this point 
+    if [ "$cword" -eq "$((cmd_idx + 1))" ]
+    then
+        local repo_dir="$(_hsh_find_root)/.hsh/repos"
+        [ -e "$repo_dir" ] || return 0
+        COMPREPLY=($(compgen -W "$(ls -1 "$repo_dir")" -- "$cur"))
+        return 0
+    fi
+    COMP_WORDS=( git --git-dir "$(_hsh_find_root)/.hsh/repos/${COMP_WORDS[cmd_idx+1]}" ${COMP_WORDS[cmd_idx]} ${COMP_WORDS[@]:$((cmd_idx+2))} )
+    if [ "${COMP_LINE[@]: -1}" = " " ] 
+    then
+        COMP_WORDS+=( "" )
+        COMP_CWORD=$(( ${#COMP_WORDS[@]} ))
+    else
+        COMP_CWORD=$(( ${#COMP_WORDS[@]} - 1 ))
+    fi
+    COMP_LINE="${COMP_WORDS[*]}"
+    COMP_POINT="${#COMP_LINE}"
+    _git
+}
+
+_hsh_edit() {
+    local cmd_idx="$1"
+    shift
+    local cword="$COMP_CWORD"
+    local cur="${COMP_WORDS[cword]}"
+    if [ "$cword" -eq "$((cmd_idx + 1))" ]
+    then
+        local repo_dir="$(_hsh_find_root)/.hsh/repos"
+        [ -e "$repo_dir" ] || return 0
+        COMPREPLY=($(compgen -W "$(ls -1 "$repo_dir")" -- "$cur"))
+        return 0
+    fi
+    if [ "$cword" -eq "$((cmd_idx + 2))" ]
+    then
+        COMPREPLY=($(compgen -W "readme license gitignore gitattributes" -- "$cur"))
+    fi
+}
+
+_hsh() {
+    local cword="$COMP_CWORD"
+    local cur=""
+    if [ $cword -ne 0 ]
+    then
+        cur="${COMP_WORDS[cword]}"
+    fi
+    local prev=""
+    if [ $cword -gt 1 ]
+    then
+        prev="${COMP_WORDS[cword-1]}"
+    fi
+    local words=("${COMP_WORDS[@]}")
+    local loc=""
+    local cmd=
+    local cmd_idx=
+    local i=1
+    local c_idx=
+    while [ $i -lt $cword ]
+    do 
+        local wrd="${words[$i]}"
+        case "$wrd" in
+            -h|--help)
+                COMPREPLY=()
+                return 0
+                ;;
+            -C)
+                c_idx=$i
+                ;;
+            -*)
+                continue
+                ;;
+            *)
+                cmd="$wrd"
+                cmd_idx=$i
+                break
+                ;;
+        esac
+        i=$((i+1))
+    done
+    if [ -z "${cmd-}" ]
+    then
+        if [ "$prev" = "-C" ]
+        then
+            COMPREPLY=( $(compgen -o dirnames -- "$cur") )
+        else
+            local choice="$(git --list-cmds=main,others,alias,nohelpers)"
+            choice="$choice edit bundle -h --help --version"
+            if [ -z "$has_c" ]
+            then
+                choice="$choice -C"
+            fi
+            COMPREPLY=($(compgen -W "$choice" -- "$cur"))
+            return 0
+        fi
+    fi
+    case "$cmd" in
+        init)
+            COMPREPLY=()
+            return 0
+            ;;
+        clone)
+            COMPREPLY=()
+            return 0
+            ;;
+        edit)
+            _hsh_edit "$cmd_idx"
+            ;;
+        *)
+            _hsh_default "$cmd" "$cmd_idx"
+            ;;
+    esac
+}
+
+complete -F _hsh hsh 
