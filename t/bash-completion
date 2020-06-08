@@ -3,6 +3,7 @@
 hsh clone git/simple_package/.git
 hsh clone git/simple_package2/.git
 hsh clone git/simple_package3/.git
+hsh clone git/package_dep/.git
 
 cat << EOF >completion_script
 #---8<--- hsh completion rules ---8<---
@@ -56,10 +57,14 @@ test_completion "hsh cl" "clean clone"
 
 test_completion "hsh add simple_pa" "simple_package simple_package2 simple_package3"
 
-test_completion "hsh add simple_package2 " "simple_file3 bin .hsh install-script.sh git simple_subdir simple_file simple_subdir3"
+test_completion "hsh add simple_package2 " "simple_file3 bin file_dep .hsh install-script.sh git simple_subdir simple_file subdir_dep simple_subdir3"
 
 test_completion "hsh add simple_package2 sim" "simple_file3 simple_subdir simple_file simple_subdir3"
 
 test_completion "hsh edit simple_package2 " "readme license gitignore gitattributes"
 
 test_completion "hsh edit simple_package2 g" "gitignore gitattributes"
+
+test_completion "hsh dependency si" "simple_package simple_package2 simple_package3"
+test_completion "hsh dependency simple_package2 " "add rm"
+test_completion "hsh dependency package_dep rm " "$(pwd)/git/simple_package3/.git"

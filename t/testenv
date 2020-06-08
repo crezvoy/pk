@@ -91,16 +91,14 @@ echo "file_dep content" \
 mkdir -p "$TE_DIR/git/package_dep/subdir_dep"
 echo "subfile_dep content" \
     > "$TE_DIR/git/package_dep/subdir_dep/subfile_dep"
-cat <<EOF >"$TE_DIR/git/package_dep/h.sh"
-hsh_require "$TE_DIR/git/simple_package3/.git"
-hsh_link "file_dep"
-hsh_link "subdir_dep/subfile_dep"
+cat <<EOF >"$TE_DIR/git/package_dep/.hshdependencies"
+$TE_DIR/git/simple_package3/.git
 EOF
 git -C "$TE_DIR/git/package_dep" init 
 git -C "$TE_DIR/git/package_dep" add \
     file_dep \
     subdir_dep/subfile_dep \
-    h.sh
+    .hshdependencies
 git -C "$TE_DIR/git/package_dep" commit -m "initial commit"
 git --git-dir "$TE_DIR/git/package_dep/.git" config core.bare true
 

@@ -144,13 +144,22 @@ hsh_clone() {
     hcl_name="${hcl_name#hsh_}"
     hcl_name="${hcl_name#hsh-}"
 
-	[ -e "$HSH_DIR/repos/$hcl_name" ] && hsh_die "repository '$hcl_name' already exists" 
-    trap "hsh_clone_cleanup \"$hcl_name\"" EXIT HUP INT QUIT ABRT TERM
-    git clone --no-checkout --recurse-submodules "$hcl_url" "$HSH_DIR/CLONE"
-    mv "$HSH_DIR/CLONE/.git" "$HSH_DIR/repos/$hcl_name"
-    hsh_config_repo "$hcl_name"
-    hsh_git "$hcl_name" checkout HEAD 
-    rmdir "$HSH_DIR/CLONE"
+	if [ ! -e "$HSH_DIR/repos/$hcl_name" ]
+    then
+        trap "hsh_clone_cleanup \"$hcl_name\"" EXIT HUP INT QUIT ABRT TERM
+        git clone --no-checkout --recurse-submodules "$hcl_url" "$HSH_DIR/CLONE"
+        mv "$HSH_DIR/CLONE/.git" "$HSH_DIR/repos/$hcl_name"
+        hsh_config_repo "$hcl_name"
+        hsh_git "$hcl_name" checkout HEAD 
+        rmdir "$HSH_DIR/CLONE"
+    fi
+    if hsh_git "$hcl_name" ls-files | grep '^\.hshdependencies$'
+    then
+        hsh_git "$hcl_name" show HEAD:.hshdependencies | while IFS= read -r hcl_dep
+        do
+            $0 clone "$hcl_dep"
+        done
+    fi
 }
 
 hsh_complete_url() {
@@ -287,8 +296,74 @@ hsh_config_repo() {
 		!.gitignore
 		!.gitattributes
 		!h.sh
+		!.hshdependencies
 		!LICENSE
 		EOF
+}
+
+hsh_dependency_usage() {
+    cat <<EOF 
+usage: hsh dependency <repository> [[add | rm] <url>]
+EOF
+}
+
+hsh_dependency() {
+    while [ $# -ne 0 ]
+    do
+        case "$1" in
+            -h|--help)
+                hsh_dependency_usage
+                return 0
+                ;;
+            -*)
+                echo "unknown option '$1'"
+                return 1
+                ;;
+            *)
+                hd_repo="$1"
+                shift
+                break
+                ;;
+        esac
+        shift
+    done
+
+    if [ $# -eq 0 ]
+    then
+        hsh_git "$hd_repo" ls-files | grep -q .hshdependencies \
+            && hsh_git "$hd_repo" show HEAD:.hshdependencies
+        return 0
+    fi
+
+    hd_action="$1"
+    shift
+    if [ $# -eq 0 ]
+    then
+        hsh_die "missing argument for hsh dependency"
+    fi
+    case "$hd_action" in 
+        add)
+            $0 clone "$1"
+            if hsh_git "$hd_repo" ls-files | grep -q '\.hshdependencies' 
+            then
+                hd_sha1="$(hsh_git "$hd_repo" show HEAD:.hshdependencies | sed "\$ a $1" | hsh_git "$hd_repo" hash-object -t blob -w --stdin)"
+                hsh_git "$hd_repo" update-index --cacheinfo "100644" "$hd_sha1" ".hshdependencies"
+            else
+                hd_sha1="$(echo "$1" | hsh_git "$hd_repo" hash-object -t blob -w --stdin)"
+                hsh_git "$hd_repo" update-index --add --cacheinfo "100644" "$hd_sha1" ".hshdependencies"
+            fi
+            ;;
+        rm)
+            if hsh_git "$hd_repo" ls-files | grep -q '\.hshdependencies' 
+            then
+                hd_sha1="$(hsh_git "$hd_repo" show HEAD:.hshdependencies | sed "\,^$1\$,d" | hsh_git "$hd_repo" hash-object -t blob -w --stdin)"
+                hsh_git "$hd_repo" update-index --cacheinfo "100644" "$hd_sha1" ".hshdependencies"
+            fi
+            ;;
+        *)
+            hsh_die "unknown action '$hd_action'"
+            ;;
+    esac
 }
 
 hsh_die() {
@@ -368,7 +443,7 @@ hsh_edit() {
         hsh_git "$he_repo" show "HEAD:$he_target" > "$HSH_DIR/EDIT"
     fi
     "${EDITOR:-vim}" "$HSH_DIR/EDIT"
-    he_sha1="$(hsh_git "$he_repo" hash-object -t blob --stdin < "$HSH_DIR/EDIT")"
+    he_sha1="$(hsh_git "$he_repo" hash-object -t blob -w --stdin < "$HSH_DIR/EDIT")"
     hsh_git "$he_repo" update-index --cacheinfo "100644" "$he_sha1" "$he_target"
     rm "$HSH_DIR/EDIT"
 }
@@ -532,6 +607,9 @@ case "$h_action" in
     version)
         hsh_version "$@" 
         ;;
+    bundle)
+        hsh_bundle "$@"
+        ;;
     clone)
         hsh_clone "$@"
         ;;
@@ -541,8 +619,8 @@ case "$h_action" in
     config)
         hsh_config "$@"
         ;;
-    bundle)
-        hsh_bundle "$@"
+    dependency)
+        hsh_dependency "$@"
         ;;
     init)
         hsh_init "$@"

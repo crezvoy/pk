@@ -84,6 +84,36 @@ _hsh_default() {
     _git
 }
 
+_hsh_dependency() {
+    local cmd_idx="$1"
+    shift
+    local cword="$COMP_CWORD" local cur="${COMP_WORDS[cword]}"
+    if [ "$cword" -eq "$((cmd_idx + 1))" ]
+    then
+        local repo_dir="$(_hsh_find_root)/.hsh/repos"
+        [ -e "$repo_dir" ] || return 0
+        COMPREPLY=( $(compgen -W "$(ls -1 "$repo_dir")" -- "$cur") )
+        return 0
+    fi
+    if [ "$cword" -eq "$((cmd_idx + 2))" ]
+    then
+        COMPREPLY=( $(compgen -W "add rm" -- "$cur") )
+        return 0
+    fi
+    if [ "$cword" -eq "$((cmd_idx + 3))" ]
+    then
+        local prev="${COMP_WORDS[cmd_idx + 2]}"
+        if [ "$prev" = "rm" ]
+        then
+            if git --git-dir "$(_hsh_find_root)/.hsh/repos/${COMP_WORDS[cmd_idx+1]}" ls-files | grep -q ".hshdependencies"
+            then
+                COMPREPLY=( $(compgen -W "$(git --git-dir "$(_hsh_find_root)/.hsh/repos/${COMP_WORDS[cmd_idx+1]}" show HEAD:.hshdependencies)" -- "$cur") )
+            fi
+        fi
+        return 0
+    fi
+}
+
 _hsh_edit() {
     local cmd_idx="$1"
     shift
@@ -166,6 +196,9 @@ _hsh() {
         clone)
             COMPREPLY=()
             return 0
+            ;;
+        dependency)
+            _hsh_dependency "$cmd_idx"
             ;;
         edit)
             _hsh_edit "$cmd_idx"
