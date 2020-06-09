@@ -135,14 +135,7 @@ hsh_clone() {
         hsh_die "missing parameter for hsh clone command"
     fi
     hcl_url="$(hsh_complete_url "$hcl_url")"
-    echo "$hcl_url"
-	# remove .git or /.git
-    hcl_name="${hcl_url%.git}"
-    hcl_name="${hcl_name%/}"
-	# remove hsh_ prefix
-	hcl_name="$(basename "$hcl_name")"
-    hcl_name="${hcl_name#hsh_}"
-    hcl_name="${hcl_name#hsh-}"
+    hcl_name="$(hsh_url_to_name "$hcl_url")"
 
 	if [ ! -e "$HSH_DIR/repos/$hcl_name" ]
     then
@@ -406,6 +399,8 @@ hsh_edit() {
                 ;;
             *)
                 he_repo="$1"
+                shift
+                break
                 ;;
         esac
         shift
@@ -513,6 +508,8 @@ hsh_init() {
                 ;;
             *)
                 hi_repo="$1"
+                shift
+                break
                 ;;
         esac
         shift
@@ -521,24 +518,128 @@ hsh_init() {
     if [ -z "${hi_repo-}" ]
     then
         hsh_init_usage
-    else
-		hi_repo_dir="$HSH_DIR/repos/$hi_repo"
-		hi_tmp_dir="$HSH_DIR/INIT"
-
-        if [ -e "$hi_repo_dir" ]
-        then
-            hsh_die "repository '$hi_repo' already exists"   
-        fi
-
-        trap "hsh_init_cleanup \"$hi_tmp_dir\" \"$hi_repo\"" EXIT HUP INT QUIT ABRT TERM
-        mkdir "$hi_tmp_dir"
-        # TODO this should be a bare initialize
-        #      and then setup HEAD and master branch config
-        git init "$hi_tmp_dir"
-        mv "$hi_tmp_dir/.git" "$hi_repo_dir"        
-		hsh_config_repo "$hi_repo"
-        rmdir "$hi_tmp_dir"
+        return 1
     fi
+	hi_repo_dir="$HSH_DIR/repos/$hi_repo"
+	hi_tmp_dir="$HSH_DIR/INIT"
+
+    if [ -e "$hi_repo_dir" ]
+    then
+        hsh_die "repository '$hi_repo' already exists"   
+    fi
+
+    trap "hsh_init_cleanup \"$hi_tmp_dir\" \"$hi_repo\"" EXIT HUP INT QUIT ABRT TERM
+    mkdir "$hi_tmp_dir"
+    # TODO this should be a bare initialize
+    #      and then setup HEAD and master branch config
+    git init "$hi_tmp_dir"
+    mv "$hi_tmp_dir/.git" "$hi_repo_dir"        
+	hsh_config_repo "$hi_repo"
+    rmdir "$hi_tmp_dir"
+}
+
+hsh_remove_usage() {
+    cat <<EOF
+usage: hsh remove <repository>
+EOF
+}
+
+hsh_list_dependent_repo_r() {
+    ls -1 "$HSH_DIR/repos" | while IFS= read -r hr_dep
+    do
+        hsh_git "$hr_dep" ls-files | grep -q .hshdependencies || continue 
+        hsh_git "$hr_dep" show HEAD:.hshdependencies | grep -q "[/:]/?$1/\?\(\.git\)\?\$" && hsh_list_dependent_repo_r "$hr_dep"
+    done
+    echo "$1" 
+}
+
+hsh_remove_r() {
+    ls -1 "$HSH_DIR/repos" | while IFS= read -r hr_dep
+    do
+        hsh_git "$hr_dep" ls-files | grep -q .hshdependencies || continue 
+        hsh_git "$hr_dep" show HEAD:.hshdependencies | grep -q "[/:]\?$1/\?\(\.git\)\?\$" && hsh_remove_r "$hr_dep"
+    done
+    hsh_git "$1" ls-files | while IFS= read -r hr_path
+    do
+        if [ -e "$HSH_ROOT/$hr_path" ]
+        then
+            hr_dir="$(dirname "$HSH_ROOT/$hr_path")"
+            rm "$HSH_ROOT/$hr_path"
+            if [ $(ls -1 "$hr_dir" | wc -l) -eq 0 ]  
+            then
+                rmdir "$hr_dir"
+            fi
+        fi
+    done
+    rm -rf "$1" 
+}
+
+hsh_remove() {
+    while [ $# -ne 0 ]
+    do
+        case "$1" in
+            -h|--help)
+                hsh_remove_usage
+                return 0
+                ;;
+            -y|--yes)
+                hr_yes=1
+                ;;
+            -*)
+                hsh_die "unknown option '$1' for command init"     
+                ;;
+            *)
+                hr_repo="$1"
+                shift
+                break
+                ;;
+        esac
+        shift
+    done
+
+    if [ -z "${hr_repo-}" ]
+    then
+        hsh_remove_usage
+        return 1
+    fi
+	hr_repo_dir="$HSH_DIR/repos/$hr_repo"
+    [ -e "$hr_repo_dir" ] || return 0
+
+    hr_deps="$(hsh_list_dependent_repo_r "$hr_repo" | sort -u)"
+    if [ -n "$hr_deps" ] && [ -z "${hr_yes-}" ]
+    then
+        printf "removing '$1' will remove the following repositories:\n$hr_deps\n" 
+        printf "continue? (y/N) " 
+        save_stty="$(stty -g)"
+        trap "stty $save_stty" EXIT HUP INT QUIT ABRT TERM
+        stty raw -echo 
+        while IFS= read -r doit;
+        do
+            printf "\n" 
+            case $doit in
+                y|Y)
+                    break
+                    ;;
+                *)
+                    return 1
+                    ;;
+            esac
+        done
+    fi
+    hsh_remove_r "$hr_repo"
+
+
+}
+
+hsh_url_to_name() {
+    # remove .git or /.git
+    hutn_name="${1%.git}"
+    hutn_name="${hutn_name%/}"
+    # remove hsh_ prefix
+    hutn_name="$(basename "$hutn_name")"
+    hutn_name="${hutn_name#hsh_}"
+    hutn_name="${hutn_name#hsh-}"
+    echo "$hutn_name"
 }
 
 hsh_usage()  {
@@ -601,12 +702,6 @@ then
 fi
 
 case "$h_action" in
-    help)
-        hsh_usage "$@"
-        ;;
-    version)
-        hsh_version "$@" 
-        ;;
     bundle)
         hsh_bundle "$@"
         ;;
@@ -622,11 +717,20 @@ case "$h_action" in
     dependency)
         hsh_dependency "$@"
         ;;
+    edit)
+        hsh_edit "$@"
+        ;;
+    help)
+        hsh_usage "$@"
+        ;;
     init)
         hsh_init "$@"
         ;;
-    edit)
-        hsh_edit "$@"
+    remove)
+        hsh_remove "$@"
+        ;;
+    version)
+        hsh_version "$@" 
         ;;
     *)
         if [ -z "${h_repo-}" ]

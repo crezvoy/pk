@@ -108,16 +108,14 @@ echo "file_deeper content" \
 mkdir -p "$TE_DIR/git/package_dep_deeper/subdir_deeper"
 echo "subfile_deeper content" \
     > "$TE_DIR/git/package_dep_deeper/subdir_deeper/subfile_deeper"
-cat <<EOF >"$TE_DIR/git/package_dep_deeper/h.sh"
-hsh_require "$TE_DIR/git/package_dep/.git"
-hsh_link "file_deeper"
-hsh_link "subdir_deeper/subfile_deeper"
+cat <<EOF >"$TE_DIR/git/package_dep_deeper/.hshdependencies"
+$TE_DIR/git/package_dep/.git
 EOF
 git -C "$TE_DIR/git/package_dep_deeper" init 
 git -C "$TE_DIR/git/package_dep_deeper" add \
     file_deeper \
     subdir_deeper/subfile_deeper \
-    h.sh
+    .hshdependencies
 git -C "$TE_DIR/git/package_dep_deeper" commit -m "initial commit"
 git --git-dir "$TE_DIR/git/package_dep_deeper/.git" config core.bare true
 
