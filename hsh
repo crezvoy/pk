@@ -75,10 +75,12 @@ hsh_bundle() {
                 git --work-tree "$HSH_DIR/BUNDLE" \
                     --git-dir "$HSH_DIR/BUNDLE/repos/$hb_repo" \
                     reset --hard HEAD
+                hsh_hook "$HSH_DIR/BUNDLE" "$hb_repo" "bundle"
             else
                 git --work-tree "$HSH_DIR/BUNDLE/root" \
                     --git-dir "$HSH_DIR/BUNDLE/repos/$hb_repo" \
                     reset --hard HEAD
+                hsh_hook "$HSH_DIR/BUNDLE/root" "$hb_repo" "bundle"
             fi
         else
             hsh_die "repository '$hb_repo' does not exists"
@@ -153,6 +155,7 @@ hsh_clone() {
             $0 clone "$hcl_dep"
         done
     fi
+    hsh_hook "$HSH_ROOT" "$hcl_name" "clone"
 }
 
 hsh_complete_url() {
@@ -375,6 +378,7 @@ files:
     license
     gitignore
     gitattributes
+    h.sh
 EOF
 }
 
@@ -430,10 +434,18 @@ hsh_edit() {
         gitattributes)
             he_target=".gitattributes"
             ;;
+        h.sh)
+            he_target="h.sh"
+            ;;
     esac
     trap "hsh_edit_cleanup" HUP INT QUIT ABRT TERM
     if [ -z "$(hsh_git "he_repo" ls-files | grep -q "^$he_target\$")" ]; then
-        touch "$HSH_DIR/EDIT"
+        if [ "$he_target" = "h.sh" ]
+        then
+            hsh_git hsh show HEAD:h.sh.template > "$HSH_DIR/EDIT"
+        else
+            touch "$HSH_DIR/EDIT"
+        fi
     else
         hsh_git "$he_repo" show "HEAD:$he_target" > "$HSH_DIR/EDIT"
     fi
@@ -470,8 +482,43 @@ hsh_git() {
         done
     else
         git --git-dir "$HSH_DIR/repos/$hg_repo" "$@"
-        hg_ret=$?
-        return $hg_ret
+    fi
+}
+
+hsh_git_with_hook() {
+    hg_repo="$1"
+    shift
+    if [ "$hg_repo" = "@all" ]
+    then
+        ls -1 "$HSH_DIR/repos" | while IFS= read -r hg_repo
+        do
+            if git --git-dir "$HSH_DIR/repos/$hg_repo" "$@"
+            then
+                hsh_hook "$HSH_ROOT" "$hg_repo" "$1"
+            fi
+        done
+    else
+        git --git-dir "$HSH_DIR/repos/$hg_repo" "$@"
+        hsh_hook "$HSH_ROOT" "$hg_repo" "$1"
+    fi
+}
+
+hsh_hook() {
+    hh_root="$1"
+    shift
+    hh_repo="$1"
+    shift
+    hh_action="$1"
+    shift
+    if hsh_git "$hh_repo" ls-files | grep -q 'h\.sh' 
+    then
+        (
+            cd "$hh_root"
+            export HSH_ROOT="$hh_root"
+            export HSH_REPOSITORY="$hh_repo"
+            export HSH_ACTION="$hh_action"
+            hsh_git "$hh_repo" show HEAD:h.sh | sh -s
+        )
     fi
 }
 
@@ -572,6 +619,7 @@ hsh_remove_r() {
         fi
     done
     rm -rf "$1" 
+    hsh_hook "$HSH_DIR" "$1" "remove"
 }
 
 hsh_remove() {
@@ -743,5 +791,5 @@ case "$h_action" in
             h_repo="$1"
             shift
         fi
-        hsh_git "$h_repo" "$h_action" "$@"
+        hsh_git_with_hook "$h_repo" "$h_action" "$@"
 esac

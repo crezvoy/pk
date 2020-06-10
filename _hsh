@@ -128,7 +128,7 @@ _hsh_edit() {
     fi
     if [ "$cword" -eq "$((cmd_idx + 2))" ]
     then
-        COMPREPLY=($(compgen -W "readme license gitignore gitattributes" -- "$cur"))
+        COMPREPLY=($(compgen -W "readme license gitignore gitattributes h.sh" -- "$cur"))
     fi
 }
 
@@ -179,7 +179,7 @@ _hsh() {
             COMPREPLY=( $(compgen -o dirnames -- "$cur") )
         else
             local choice="$(git --list-cmds=main,others,alias,nohelpers)"
-            choice="$choice edit bundle -h --help --version"
+            choice="$choice edit bundle dependency -h --help --version"
             if [ -z "$has_c" ]
             then
                 choice="$choice -C"

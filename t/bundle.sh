@@ -25,5 +25,6 @@ cd new_root
 [ -e ".hsh/repos/simple_package2" ] || test_fail "simple_package2 not extracted"
 [ -e "simple_file3" ] || test_fail "simple_file3 not extracted"
 [ -e "simple_subdir3/simple_subfile3" ] || test_fail "simple_subfile3 not extracted"
+[ -e "simple_package3_created_by_bundle" ] || test_fail "simple_package3_created_by_bundle missing"
 [ -e ".hsh/repos/simple_package3" ] || test_fail "simple_package3 not extracted"
 
