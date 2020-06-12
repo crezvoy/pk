@@ -656,7 +656,7 @@ hsh_remove() {
     hr_deps="$(hsh_list_dependent_repo_r "$hr_repo" | sort -u)"
     if [ -n "$hr_deps" ] && [ -z "${hr_yes-}" ]
     then
-        printf "removing '$1' will remove the following repositories:\n$hr_deps\n" 
+        printf "removing '$hr_repo' will remove the following repositories:\n$hr_deps\n" 
         printf "continue? (y/N) " 
         save_stty="$(stty -g)"
         trap "stty $save_stty" EXIT HUP INT QUIT ABRT TERM
@@ -713,11 +713,6 @@ hsh_version() {
 
 [ -e "" ] && 
 
-if [ $# -eq 0 ]
-then
-    hsh_usage
-fi
-
 while [ $# -ne 0 ]
 do
     case "$1" in
@@ -767,9 +762,6 @@ case "$h_action" in
         ;;
     completion)
         hsh_completion "$@"
-        ;;
-    config)
-        hsh_config "$@"
         ;;
     dependency)
         hsh_dependency "$@"
