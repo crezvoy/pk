@@ -695,7 +695,10 @@ hsh_usage()  {
 usage: hsh clone <url>
        hsh bundle 
        hsh init <name>
-       hsh <repo> <git action> [<git params>]
+       hsh remove <name>
+       hsh dependency [[add|rm] url]
+       hsh edit <file>
+       hsh <git action> <repo> [<git params>]
 EOF
 }
 
@@ -740,6 +743,12 @@ do
     esac
     shift
 done
+
+if [ -z "${h_action-}" ]
+then
+    hsh_usage
+    exit 1
+fi
 
 if [ "$h_action" != "version" ] \
     && [ "$h_action" != "help" ]
