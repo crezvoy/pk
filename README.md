@@ -11,6 +11,7 @@ Its most salient features are:
  - hsh is not a link farm, files are checked out directly from git directories
    and conflicts on common files are handled by sparse-checkout settings. 
 
+
 # Install
 
     cd
@@ -24,6 +25,7 @@ subdirectory.
 Available options:
  - `-C <path>` act as if the install script was called from `<path>`
  - `-b, --bin <path>` check out the hsh script in `<path>`
+
 
 # Commands
 
@@ -39,14 +41,16 @@ or, you apply the same command to all the repositories:
 in that form, the hsh command fails if all the git commands fail.  By default
 hsh will act on the nearest .hsh directory up the directory tree but all
 commands accept a `-C` argument to change the current directory before any
-action. `hsh` do however add new commands or override git ones.
+action. most commands are forwarded directlyu to git, `hsh` do however add new
+commands or override git ones.
+
 
 ## Init
-
 
     hsh [-C <dir>] init <name>
 
 The `init` command creates a new repository `<name>` in `hsh`.
+
 
 ## Clone
 
@@ -55,6 +59,7 @@ The `init` command creates a new repository `<name>` in `hsh`.
 The clone command clone an existing repository by putting the `.git` directory
 in the `.hsh` directory and checkng out the default branch. The command does not
 accept any parameters other than `-C`.
+
 
 ## Bundle
 
@@ -73,6 +78,16 @@ As for other command, `-C` changes the current directory. one of the repo that
 are extracted by the bundle is `hsh` itself, the `--bin` option allow you to
 customize the path to where ths hsh script is extracted and defaults to `./bin`.
 
+
+# Dependencies
+
+    hsh [-C <dir>] dependency <repo> [[add|rm] <repository url>]
+
+A repository can depend on others. Dependencies are installed along with the
+repository. When removing a repository all dependent repositories are removed
+as well. the `hsh dependency` allows listing, adding removing dependencies to a
+repository.
+
 ## Edit
 
     hsh edit <repo> <file>
@@ -85,6 +100,7 @@ repositories:
 - `LICENSE`
 - `.gitignore`
 - `.gitattributes`
+- `h.sh`
 
 Modified files are staged directly after edition.
 
@@ -102,15 +118,16 @@ Modified files are staged directly after edition.
     hsh -a pull
     hsh -a push
 
+
 # Roadmap
 
- - [ ] dependencies
- - [ ] hooks (install update *etc.*)
+ - [x] dependencies
+ - [x] hooks (install update *etc.*)
  - [ ] portability tests
- - [ ] bash completion
+ - [x] bash completion
  - [ ] CI
- - [ ] github/gitlab url shortening
+ - [x] github/gitlab url shortening
 
 # License
 
-hsh is licensed under the terms of the MIT license.
+hsh is licensed under the terms of the MIT license. For more information refer to the LICENSE file.
