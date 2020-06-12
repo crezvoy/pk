@@ -26,6 +26,8 @@ cleanup() {
     fi
 }
 
+dir="$(pwd)"
+
 while [ $# -ne 0 ]
 do
 	case "$1" in
@@ -43,14 +45,17 @@ do
             [ $# -eq 0 ] && die "missing value for parameter --hsh-dir"
 			bin_dir="$1"
 			;;
+        -t|--track)
+			shift
+            [ $# -eq 0 ] && die "missing value for parameter --track"
+            track="$1" 
+            ;;
 		*)
 			die "unknown option '$1'"
 			;;
 	esac
 	shift
 done
-
-dir="${dir:-$(pwd)}"
 
 if [ -n "$dir" ]
 then
@@ -75,5 +80,9 @@ git --git-dir "$hsh_dir/repos/hsh" config status.showUntrackedFiles no
 cat << 'EOF' > "$hsh_dir/repos/hsh/info/sparse-checkout" 
 hsh
 EOF
+if [ -n "${track-}" ]
+then
+    git checkout "${track}"
+fi
 git --git-dir "$hsh_dir/repos/hsh" reset --hard HEAD
 rm -rf "$tmp_dir"
