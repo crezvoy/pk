@@ -178,7 +178,7 @@ _hsh() {
         then
             COMPREPLY=( $(compgen -o dirnames -- "$cur") )
         else
-            local choice="$(git --list-cmds=main,others,alias,nohelpers)"
+            local choice="$(git --list-cmds=main,alias,nohelpers)"
             choice="$choice edit bundle dependency -h --help --version"
             if [ -z "$has_c" ]
             then
