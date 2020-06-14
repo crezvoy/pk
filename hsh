@@ -510,7 +510,7 @@ hsh_hook() {
     shift
     hh_action="$1"
     shift
-    if hsh_git "$hh_repo" ls-files | grep -q 'h\.sh' 
+    if hsh_git "$hh_repo" ls-files | grep -q '^h\.sh$' 
     then
         (
             cd "$hh_root"
