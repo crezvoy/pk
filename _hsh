@@ -38,25 +38,6 @@ _hsh_repo_dir() {
     local repo_dir="$(_hsh_find_root)/.hsh/repos"
 }
 
-_hsh_is_global_command () {
-    while [ $i -lt $COMP_CWORD ]
-    do 
-        case "${COMP_WORDS[$i]}" in
-            -a|--all)
-                return 0
-                ;;
-            -*)
-                : go on
-                ;;
-            *)
-                break
-                ;;
-        esac
-        i=$((i + 1))
-    done
-    return 1
-}
-
 _hsh_default() {
     local cmd="$1"
     shift
@@ -68,7 +49,7 @@ _hsh_default() {
     then
         local repo_dir="$(_hsh_find_root)/.hsh/repos"
         [ -e "$repo_dir" ] || return 0
-        COMPREPLY=($(compgen -W "$(ls -1 "$repo_dir")" -- "$cur"))
+        COMPREPLY=($(compgen -W "all $(ls -1 "$repo_dir")" -- "$cur"))
         return 0
     fi
     COMP_WORDS=( git --git-dir "$(_hsh_find_root)/.hsh/repos/${COMP_WORDS[cmd_idx+1]}" ${COMP_WORDS[cmd_idx]} ${COMP_WORDS[@]:$((cmd_idx+2))} )

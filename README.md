@@ -36,7 +36,7 @@ to a sigle repository as such:
 
 or, you apply the same command to all the repositories:
 
-    hsh [-C <dir>] <-a|-all> <git command> <git arguments>
+    hsh [-C <dir>] <git command> all <git arguments>
 
 in that form, the hsh command fails if all the git commands fail.  By default
 hsh will act on the nearest .hsh directory up the directory tree but all
@@ -113,10 +113,10 @@ Modified files are staged directly after edition.
     # add file to the repo
     hsh add vim .vimrc
     # you can also apply a command to all repository at once
-    hsh -a commit -m "syncing dotfiles"
+    hsh commit all -m "syncing dotfiles"
     # by default hsh repositories configured to rebase on pull
-    hsh -a pull
-    hsh -a push
+    hsh pull all
+    hsh push all
 
 
 # Roadmap

@@ -474,11 +474,10 @@ hsh_find_root() {
 hsh_git() {
     hg_repo="$1"
     shift
-    if [ "$hg_repo" = "@all" ]
+    if [ "$hg_repo" = "all" ] || [ "$hg_repo" = "a" ]
     then
         ls -1 "$HSH_DIR/repos" | while IFS= read -r hg_repo
         do
-            echo "# $hg_repo"
             git --git-dir "$HSH_DIR/repos/$hg_repo" "$@" || true
         done
     else
@@ -489,7 +488,7 @@ hsh_git() {
 hsh_git_with_hook() {
     hg_repo="$1"
     shift
-    if [ "$hg_repo" = "@all" ]
+    if [ "$hg_repo" = "all" ] || [ "$hg_repo" = "a" ]
     then
         ls -1 "$HSH_DIR/repos" | while IFS= read -r hg_repo
         do
@@ -712,8 +711,6 @@ hsh_version() {
 # Main #
 ########
 
-[ -e "" ] && 
-
 while [ $# -ne 0 ]
 do
     case "$1" in
@@ -724,9 +721,6 @@ do
                 hsh_die "missing parameter for option '-C'"
             fi
             h_root="$1" 
-            ;;
-        -a|--all)
-            h_repo="@all"
             ;;
         -*)
             hsh_die "unknown option '$1'"

@@ -7,16 +7,16 @@ hsh clone "git/simple_package3/.git" || test_fail "clone failed"
 echo "simple_file v2" >> "simple_file"
 echo "simple_file2 v2" >> "simple_file2"
 
-hsh -a add -u || test_fail "add failed"
+hsh add all -u || test_fail "add failed"
 
-hsh -a commit -m "new files" || test_fail "commit failed"
+hsh commit all -m "new files" || test_fail "commit failed"
 
 hsh status "simple_package" | grep -q "ahead" || test_fail "commit not created"
 hsh status "simple_package2" | grep -q "ahead" || test_fail "second commit not created"
 hsh status "simple_package3" | grep -q "ahead" && test_fail "unnecessary commit created"
 
-hsh -a push || test_fail "push failed"
+hsh push all || test_fail "push failed"
 
-hsh -a status | grep -q "ahead" && test_fail "commit not created"
+hsh status all | grep -q "ahead" && test_fail "commit not created"
 
 true
