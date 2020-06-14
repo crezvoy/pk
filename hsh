@@ -478,6 +478,7 @@ hsh_git() {
     then
         ls -1 "$HSH_DIR/repos" | while IFS= read -r hg_repo
         do
+            echo "# $hg_repo"
             git --git-dir "$HSH_DIR/repos/$hg_repo" "$@" || true
         done
     else
