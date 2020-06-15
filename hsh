@@ -492,6 +492,7 @@ hsh_git_with_hook() {
     then
         ls -1 "$HSH_DIR/repos" | while IFS= read -r hg_repo
         do
+            echo "# $hg_repo"
             if git --git-dir "$HSH_DIR/repos/$hg_repo" "$@"
             then
                 hsh_hook "$HSH_ROOT" "$hg_repo" "$1"
