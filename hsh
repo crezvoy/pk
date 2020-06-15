@@ -439,7 +439,7 @@ hsh_edit() {
             ;;
     esac
     trap "hsh_edit_cleanup" HUP INT QUIT ABRT TERM
-    if [ -z "$(hsh_git "he_repo" ls-files | grep -q "^$he_target\$")" ]; then
+    if [ -z "$(hsh_git "$he_repo" ls-files | grep -q "^$he_target\$")" ]; then
         if [ "$he_target" = "h.sh" ]
         then
             hsh_git hsh show HEAD:h.sh.template > "$HSH_DIR/EDIT"
