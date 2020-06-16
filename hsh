@@ -295,6 +295,14 @@ hsh_config_repo() {
 		!.hshdependencies
 		!LICENSE
 		EOF
+    cat <<- 'EOF' > "$HSH_DIR/repos/$1/info/exclude"
+		README
+		.gitignore
+		.gitattributes
+		h.sh
+		.hshdependencies
+		LICENSE
+		EOF
 }
 
 hsh_dependency_usage() {
@@ -438,20 +446,21 @@ hsh_edit() {
             he_target="h.sh"
             ;;
     esac
-    trap "hsh_edit_cleanup" HUP INT QUIT ABRT TERM
-    if [ -z "$(hsh_git "$he_repo" ls-files | grep -q "^$he_target\$")" ]; then
+    trap "hsh_edit_cleanup" EXIT HUP INT QUIT ABRT TERM
+    if hsh_git "$he_repo" ls-files | grep -q "^$he_target\$"; then
+        hsh_git "$he_repo" show "HEAD:$he_target" > "$HSH_DIR/EDIT"
+    else
         if [ "$he_target" = "h.sh" ]
         then
             hsh_git hsh show HEAD:h.sh.template > "$HSH_DIR/EDIT"
         else
             touch "$HSH_DIR/EDIT"
         fi
-    else
-        hsh_git "$he_repo" show "HEAD:$he_target" > "$HSH_DIR/EDIT"
     fi
     "${EDITOR:-vim}" "$HSH_DIR/EDIT"
     he_sha1="$(hsh_git "$he_repo" hash-object -t blob -w --stdin < "$HSH_DIR/EDIT")"
-    hsh_git "$he_repo" update-index --cacheinfo "100644" "$he_sha1" "$he_target"
+    hsh_git "$he_repo" update-index --add --cacheinfo "100644" "$he_sha1" "$he_target"
+    hsh_git "$he_repo" update-index --skip-worktree "$he_target"
     rm "$HSH_DIR/EDIT"
 }
 
