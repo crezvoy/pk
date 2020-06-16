@@ -32,6 +32,28 @@ fixup_worktree() {
     rm "$1.bck"
 }
 
+run_hook() {
+    [ -e "$tmp_dir/hooks/$1" ] || return
+    if [ -e "$tmp_dir/dependencies/$1" ]
+    then
+        while IFS= read -r entry
+        do
+            d="${entry%.git}"
+            d="${d%/}"
+            d="${d##*/}"
+            run_hook "$d"
+        done < "$tmp_dir/dependencies/$1"
+    fi
+    (
+        export HSH_ROOT="$(pwd)"
+    	export HSH_ACTION="bundle-out"
+    	export HSH_REPOSITORY="$1"
+    	export HSH_BUNDLE_ROOT="$tmp_dir/repos"
+        sh $tmp_dir/hooks/$1
+    )
+    rm "$tmp_dir/hooks/$1"
+}
+
 while [ $# -ne 0 ]
 do
 	case "$1" in
@@ -93,6 +115,11 @@ cp -rfP "$tmp_dir/repos" "$hsh_dir"
 ls -1 "$tmp_dir/root" | while IFS= read -r entry
 do
     cp -rfP "$tmp_dir/root/$entry" "$(pwd)"
+done
+
+while [ $(ls -1 "$tmp_dir/hooks" | wc -l) -ne 0 ]
+do
+	run_hook "$(ls -1 "$tmp_dir/hooks" | head -n 1)"
 done
 
 rm -rf "$tmp_dir"

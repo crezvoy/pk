@@ -55,6 +55,8 @@ hsh_bundle() {
     # bundle hsh
     mkdir -p "$HSH_DIR/BUNDLE/repos"
     mkdir -p "$HSH_DIR/BUNDLE/root"
+    mkdir -p "$HSH_DIR/BUNDLE/dependencies"
+    mkdir -p "$HSH_DIR/BUNDLE/hooks"
     
     # check for local modifications
     if [ -z "${hb_force-}" ]
@@ -75,13 +77,22 @@ hsh_bundle() {
                 git --work-tree "$HSH_DIR/BUNDLE" \
                     --git-dir "$HSH_DIR/BUNDLE/repos/$hb_repo" \
                     reset --hard HEAD
-                hsh_hook "$HSH_DIR/BUNDLE" "$hb_repo" "bundle"
+                hsh_hook "$HSH_ROOT" "$hb_repo" "bundle-in" "$HSH_DIR/BUNDLE"
             else
                 git --work-tree "$HSH_DIR/BUNDLE/root" \
                     --git-dir "$HSH_DIR/BUNDLE/repos/$hb_repo" \
                     reset --hard HEAD
-                hsh_hook "$HSH_DIR/BUNDLE/root" "$hb_repo" "bundle"
+                hsh_hook "$HSH_ROOT" "$hb_repo" "bundle-in" "$HSH_DIR/BUNDLE/root"
             fi
+
+            if hsh_git "$hb_repo" ls-files | grep '^h\.sh$'
+            then
+                hsh_git "$hb_repo" show HEAD:h.sh > "$HSH_DIR/BUNDLE/hooks/$hb_repo"
+	    fi
+            if hsh_git "$hb_repo" ls-files | grep '^\.hshdependencies$'
+            then
+                hsh_git "$hb_repo" show HEAD:.hshdependencies > "$HSH_DIR/BUNDLE/dependencies/$hb_repo"
+	    fi
         else
             hsh_die "repository '$hb_repo' does not exists"
         fi
@@ -520,6 +531,11 @@ hsh_hook() {
     shift
     hh_action="$1"
     shift
+    if [ $# -ne 0 ]
+    then
+        hh_bundle_root="$1"
+        shift
+    fi
     if hsh_git "$hh_repo" ls-files | grep -q '^h\.sh$' 
     then
         (
@@ -527,6 +543,11 @@ hsh_hook() {
             export HSH_ROOT="$hh_root"
             export HSH_REPOSITORY="$hh_repo"
             export HSH_ACTION="$hh_action"
+	    if [ -n "${hh_bundle_root-}" ]
+	    then
+                export HSH_BUNDLE_ROOT="$hh_bundle_root"
+	    fi
+
             hsh_git "$hh_repo" show HEAD:h.sh | sh -s
         )
     fi

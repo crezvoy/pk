@@ -61,11 +61,14 @@ echo "simple_subfile3 content" \
 cat << 'EOF' >"$TE_DIR/git/simple_package3/h.sh"
 #! /bin/sh
 case "$HSH_ACTION" in
+    bundle-out)
+        touch "${HSH_REPOSITORY}_created_by_bundle_out"
+        ;;
     clone)
         touch "${HSH_REPOSITORY}_created_by_clone"
         ;;
-    bundle)
-        touch "${HSH_REPOSITORY}_created_by_bundle"
+    bundle-in)
+        touch "$HSH_BUNDLE_ROOT/${HSH_REPOSITORY}_created_by_bundle_in"
         ;;
     remove)
         [ -e "${HSH_REPOSITORY}_created_by_bundle" ] && rm "${HSH_REPOSITORY}_created_by_bundle"
@@ -90,11 +93,24 @@ echo "subfile_dep content" \
 cat <<EOF >"$TE_DIR/git/package_dep/.hshdependencies"
 $TE_DIR/git/simple_package3/.git
 EOF
+cat << 'EOF' >"$TE_DIR/git/package_dep/h.sh"
+#! /bin/sh
+case "$HSH_ACTION" in
+    bundle-out)
+        [ -e "simple_package3_created_by_bundle_out" ] || exit 1
+        ;;
+    clone)
+        [ -e "simple_package3_created_by_clone" ] || exit 1
+        ;;
+esac
+EOF
 git -C "$TE_DIR/git/package_dep" init 
+
 git -C "$TE_DIR/git/package_dep" add \
     file_dep \
     subdir_dep/subfile_dep \
-    .hshdependencies
+    .hshdependencies \
+    h.sh
 git -C "$TE_DIR/git/package_dep" commit -m "initial commit"
 git --git-dir "$TE_DIR/git/package_dep/.git" config core.bare true
 
