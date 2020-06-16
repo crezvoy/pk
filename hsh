@@ -295,7 +295,7 @@ hsh_config_repo() {
 		!.hshdependencies
 		!LICENSE
 		EOF
-    cat <<- 'EOF' > "$HSH_DIR/repos/$1/info/exclude"
+    cat <<- 'EOF' >> "$HSH_DIR/repos/$1/info/exclude"
 		README
 		.gitignore
 		.gitattributes
