@@ -300,6 +300,7 @@ hsh_config_repo() {
     cat <<- 'EOF' > "$HSH_DIR/repos/$1/info/sparse-checkout" 
 		/*
 		!README.md
+		!.gitmodules
 		!.gitignore
 		!.gitattributes
 		!h.sh
@@ -308,6 +309,7 @@ hsh_config_repo() {
 		EOF
     cat <<- 'EOF' >> "$HSH_DIR/repos/$1/info/exclude"
 		README
+		.gitmodules
 		.gitignore
 		.gitattributes
 		h.sh
