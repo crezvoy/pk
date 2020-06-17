@@ -362,17 +362,20 @@ hsh_dependency() {
             if hsh_git "$hd_repo" ls-files | grep -q '\.hshdependencies' 
             then
                 hd_sha1="$(hsh_git "$hd_repo" show HEAD:.hshdependencies | sed "\$ a $1" | hsh_git "$hd_repo" hash-object -t blob -w --stdin)"
-                hsh_git "$hd_repo" update-index --cacheinfo "100644" "$hd_sha1" ".hshdependencies"
+                hsh_git "$hd_repo" update-index --add --cacheinfo "100644" "$hd_sha1" ".hshdependencies"
+		hsh_git "$he_repo" update-index --skip-worktree "$he_target"
             else
                 hd_sha1="$(echo "$1" | hsh_git "$hd_repo" hash-object -t blob -w --stdin)"
                 hsh_git "$hd_repo" update-index --add --cacheinfo "100644" "$hd_sha1" ".hshdependencies"
-            fi
+		hsh_git "$he_repo" update-index --skip-worktree "$he_target"
+	    fi
             ;;
         rm)
             if hsh_git "$hd_repo" ls-files | grep -q '\.hshdependencies' 
             then
                 hd_sha1="$(hsh_git "$hd_repo" show HEAD:.hshdependencies | sed "\,^$1\$,d" | hsh_git "$hd_repo" hash-object -t blob -w --stdin)"
                 hsh_git "$hd_repo" update-index --cacheinfo "100644" "$hd_sha1" ".hshdependencies"
+		hsh_git "$he_repo" update-index --skip-worktree "$he_target"
             fi
             ;;
         *)
