@@ -164,6 +164,12 @@ if [ -z "$pk_type" ]; then
     pk_die "your package management system is not currently supported. you can contribute at https://github.com/crezvoy/pk"
 fi
 
+if [ $# -eq 0 ]
+then
+    pk_usage
+    exit 1
+fi
+
 pk_cmd="$1"
 shift
 
