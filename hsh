@@ -153,10 +153,11 @@ hsh_clone() {
 	if [ ! -e "$HSH_DIR/repos/$hcl_name" ]
     then
         trap "hsh_clone_cleanup \"$hcl_name\"" EXIT HUP INT QUIT ABRT TERM
-        git clone --no-checkout --recurse-submodules "$hcl_url" "$HSH_DIR/CLONE"
+        git clone --no-checkout "$hcl_url" "$HSH_DIR/CLONE"
         mv "$HSH_DIR/CLONE/.git" "$HSH_DIR/repos/$hcl_name"
         hsh_config_repo "$hcl_name"
         hsh_git "$hcl_name" checkout HEAD 
+        hsh_git "$hcl_name" submodule update --init --recursive
         rmdir "$HSH_DIR/CLONE"
     fi
     if hsh_git "$hcl_name" ls-files | grep '^\.hshdependencies$'
