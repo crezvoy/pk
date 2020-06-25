@@ -105,11 +105,11 @@ pk_apk_owner() {
 #######
 
 pk_apt_install() {
-    apt install "$@"
+    sudo apt install "$@"
 }
 
 pk_apt_remove() {
-    apt remove "$@"
+    sudo apt remove "$@"
 }
 
 pk_apt_search() {
@@ -117,11 +117,11 @@ pk_apt_search() {
 }
 
 pk_apt_update() {
-    apt update "$@"
+    sudo apt update "$@"
 }
 
 pk_apt_upgrade() {
-    apt upgrade "$@"
+    sudo apt upgrade "$@"
 }
 
 pk_apt_owner() {
@@ -134,11 +134,11 @@ pk_apt_owner() {
 #######
 
 pk_dnf_install() {
-    dnf install "$@"
+    sudo dnf install "$@"
 }
 
 pk_dnf_remove() {
-    dnf remove "$@"
+    sudo dnf remove "$@"
 }
 
 pk_dnf_search () {
@@ -146,11 +146,11 @@ pk_dnf_search () {
 }
 
 pk_dnf_update() {
-    dnf check-update "$@"
+    sudo dnf check-update "$@"
 }
 
 pk_dnf_upgrade() {
-    dnf upgrade "$@"
+    sudo dnf upgrade "$@"
 }
 
 pk_dnf_owner() {
