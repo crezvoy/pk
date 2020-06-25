@@ -721,7 +721,8 @@ hsh_url_to_name() {
     hutn_name="${1%.git}"
     hutn_name="${hutn_name%/}"
     # remove hsh_ prefix
-    hutn_name="$(basename "$hutn_name")"
+    hutn_name="${hutn_name##*:}"
+    hutn_name="${hutn_name##*/}"
     hutn_name="${hutn_name#hsh_}"
     hutn_name="${hutn_name#hsh-}"
     echo "$hutn_name"
