@@ -474,7 +474,7 @@ hsh_edit() {
             touch "$HSH_DIR/EDIT"
         fi
     fi
-    "${EDITOR:-vim}" "$HSH_DIR/EDIT"
+    ${EDITOR:-vim} "$HSH_DIR/EDIT"
     he_sha1="$(hsh_git "$he_repo" hash-object -t blob -w --stdin < "$HSH_DIR/EDIT")"
     hsh_git "$he_repo" update-index --add --cacheinfo "100644" "$he_sha1" "$he_target"
     hsh_git "$he_repo" update-index --skip-worktree "$he_target"
