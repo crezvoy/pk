@@ -79,13 +79,16 @@ hsh_bundle() {
                     reset --hard HEAD
                 hsh_hook "$HSH_ROOT" "$hb_repo" "bundle-in" "$HSH_DIR/BUNDLE"
             else
-                git --work-tree "$HSH_DIR/BUNDLE/root" \
-                    --git-dir "$HSH_DIR/BUNDLE/repos/$hb_repo" \
-                    reset --hard HEAD
-                hsh_hook "$HSH_ROOT" "$hb_repo" "bundle-in" "$HSH_DIR/BUNDLE/root"
-            fi
-
-            if hsh_git "$hb_repo" ls-files | grep '^h\.sh$'
+		hb_nr_files=$(hsh_git "$hb_repo" ls-files | grep -v '^h\.sh$' | grep -v '^.hshdependencies$' | wc -l)
+		if [ $hb_nr_files -ne 0 ] 
+		then
+		    git --work-tree "$HSH_DIR/BUNDLE/root" \
+			--git-dir "$HSH_DIR/BUNDLE/repos/$hb_repo" \
+			reset --hard HEAD
+		fi
+		hsh_hook "$HSH_ROOT" "$hb_repo" "bundle-in" "$HSH_DIR/BUNDLE/root"
+	    fi
+	    if hsh_git "$hb_repo" ls-files | grep '^h\.sh$'
             then
                 hsh_git "$hb_repo" show HEAD:h.sh > "$HSH_DIR/BUNDLE/hooks/$hb_repo"
 	    fi
