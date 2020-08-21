@@ -133,12 +133,42 @@ pk_apt_owner() {
 # dnf #
 #######
 
+pk_dnf_translate() {
+    while [ $# -ne 0 ]
+    do
+	case "$1" in 
+	    shellcheck)
+		echo "ShellCheck"               
+		;;
+	    ifrench-gut|iamerican-huge|ispell)
+		echo "tmispell-voikko"
+		;;
+	    texlive-latex-recommended)
+		echo "textlive-latex"
+		;;
+	    texlive-bibtex-extra)
+		echo "textlive-bibtex"
+		;;
+	    texlive-lang-french)
+		echo "texlive-babel-french"
+		;;
+	    mu4e)
+		echo "maildir-utils"
+		;;
+	    *)
+		echo "$1"
+		;; 
+	esac
+        shift
+    done
+}
+
 pk_dnf_install() {
-    sudo dnf install "$@"
+    sudo dnf install "$($pk_dnf_translate "$@")"
 }
 
 pk_dnf_remove() {
-    sudo dnf remove "$@"
+    sudo dnf remove "$($pk_dnf_translate "$@")"
 }
 
 pk_dnf_search () {
